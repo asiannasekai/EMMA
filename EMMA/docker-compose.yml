@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  cap-generator:
+    build: ./cap-generator
+    volumes:
+      - ./cap-generator:/app
+    working_dir: /app
+    command: python3 capgen.py
+    depends_on: []
+  ns3-sim:
+    build: ./ns3-sim
+    volumes:
+      - ./cap-generator:/data
+    working_dir: /data
+    command: /bin/bash -c "cp alert123.xml /ns3/scratch/ && cd /ns3 && ./waf --run 'scratch/emma-lte-sim --capFile=scratch/alert123.xml'"
+    network_mode: "host"
+    depends_on: [cap-generator]
+  http-cdn:
+    build: ./http-cdn
+    volumes:
+      - ./cap-generator/alert123.smc.zip:/usr/src/app/alerts/alert123.zip
+    working_dir: /usr/src/app
+    ports:
+      - "8080:8080"
+    depends_on: [cap-generator]
+  ue-emulator:
+    build: ./ue-emulator
+    network_mode: "host"
+    depends_on: [ns3-sim, http-cdn] 
