@@ -1,0 +1,5 @@
+def build(bld):
+    module = bld.new_task_gen('cxx', 'program')
+    module.source = 'emma-sim.cc'
+    module.use = ['core', 'network', 'internet', 'lte']
+    module.target = 'emma-sim' 

@@ -1,3 +1,5 @@
-lxml
-pycap
-cryptography 
+pycap==1.0.0
+cryptography==41.0.0
+lxml==4.9.3
+pytest==7.4.0
+python-dotenv==1.0.0 

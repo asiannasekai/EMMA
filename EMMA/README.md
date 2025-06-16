@@ -1,58 +1,153 @@
-# EMMA: Enhanced Multimedia Mobile Alerts (Proof of Concept)
+# EMMA (Enhanced Multimedia Mobile Alerts)
 
-## Overview
+A fully software-defined proof-of-concept for emergency alert distribution over LTE networks with multimedia support.
 
-EMMA simulates an end-to-end cell broadcast alert system with media attachments, using:
-- CAP/eCAP alert generation (Python)
-- LTE RAN+EPC simulation (ns-3)
-- Multicast cell-broadcast delivery
-- HTTP CDN fallback for media
-- Android emulator client for alert reception and display
-- Docker Compose orchestration
+## Project Structure
+
+```
+EMMA/
+├── cap-generator/     # Python-based CAP/eCAP generator
+├── ns3-sim/          # ns-3 LTE network simulator
+├── http-cdn/         # Node.js media server
+├── ue-emulator/      # Android client emulator
+└── docker-compose.yml
+```
+
+## Prerequisites
+
+- Docker and Docker Compose
+- Ubuntu 20.04 or later
+- At least 8GB RAM
+- 20GB free disk space
 
 ## Quick Start
 
-### Prerequisites
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/EMMA.git
+   cd EMMA
+   ```
 
-- Ubuntu 20.04+ with Docker and Docker Compose
-- ns-3 (for building the LTE sim)
-- OpenSSL (for key generation)
+2. Build and start all services:
+   ```bash
+   docker-compose up --build
+   ```
 
-### Build and Run
+3. Generate a test alert:
+   ```bash
+   docker-compose exec cap-generator python3 cap_generator.py
+   ```
 
-```sh
-# Clone repo and cd into EMMA/
-docker-compose up --build
+## Components
+
+### CAP Generator
+
+The CAP generator creates Common Alerting Protocol (CAP) messages with optional multimedia attachments.
+
+- Generates both text-only CAP and extended CAP (eCAP) XML files
+- Creates Secure Media Containers (SMC) for attachments
+- Signs media with ECDSA
+- Outputs: `alert123.xml` and `alert123.smc.zip`
+
+### NS-3 Simulator
+
+The ns-3 simulator creates a virtual LTE network environment.
+
+- Simulates one eNodeB and 10 UE nodes
+- Configures multicast group 239.255.0.1:5000
+- Streams CAP XML payloads
+- Logs reception timestamps
+
+### HTTP CDN
+
+A simple Node.js server for media distribution.
+
+- Serves static files from `/alerts`
+- Provides CORS support
+- Includes health check and metrics endpoints
+- Runs on port 3000
+
+### UE Emulator
+
+An Android-based client that receives and displays alerts.
+
+- Listens for multicast alerts
+- Verifies media signatures
+- Displays text and media content
+- Runs in a Docker container with Android emulator
+
+## Testing
+
+### Unit Tests
+
+Run tests for each component:
+
+```bash
+# CAP Generator tests
+docker-compose exec cap-generator pytest
+
+# HTTP CDN tests
+docker-compose exec http-cdn npm test
 ```
 
-### Components
+### Integration Tests
 
-- **cap-generator**: Generates CAP/eCAP XML and SMC zip with ECDSA signature.
-- **ns3-sim**: Simulates LTE network, multicasts alert XML.
-- **http-cdn**: Serves media zip over HTTP.
-- **ue-emulator**: Android emulator, listens for alerts, fetches and displays media.
+1. Generate a test alert:
+   ```bash
+   docker-compose exec cap-generator python3 cap_generator.py
+   ```
 
-### Generating New Alerts
+2. Monitor the UE emulator logs:
+   ```bash
+   docker-compose logs -f ue-emulator
+   ```
 
-1. Place new media in `cap-generator/media/`.
-2. Run `docker-compose run cap-generator`.
-3. The new `alert123.xml`, `alert123.ecap.xml`, and `alert123.smc.zip` will be generated.
+3. Check HTTP CDN metrics:
+   ```bash
+   curl http://localhost:3000/metrics
+   ```
 
-### Viewing Logs
+## Extending the CAP Schema
 
-- `docker-compose logs ns3-sim` — shows multicast delivery and UE reception timestamps.
-- `docker-compose logs ue-emulator` — shows alert reception and UI display.
+To add new attachment types:
 
-### Metrics
+1. Modify `cap_generator.py` to support new media types
+2. Update the Android client's media handling
+3. Add appropriate MIME type support in the HTTP CDN
 
-- **Latency**: Compare timestamps in ns3-sim and ue-emulator logs.
-- **Bandwidth**: Check size of SMC zip and network logs.
+## Monitoring
 
-### Extending CAP XML
+- HTTP CDN metrics: `http://localhost:3000/metrics`
+- NS-3 traces: Check `ns3-sim/traces/`
+- UE emulator logs: `docker-compose logs ue-emulator`
 
-- Add new `<parameter>` or custom `<ecap:Attachment>` elements in the Python template in `capgen.py`.
-- Update the Android service to handle new tags as needed.
+## Troubleshooting
 
----
+1. If the Android emulator fails to start:
+   ```bash
+   docker-compose down
+   docker system prune
+   docker-compose up --build
+   ```
 
-**This PoC is fully software-defined and reproducible on any Ubuntu host with Docker.** 
+2. If multicast isn't working:
+   - Ensure host network mode is enabled
+   - Check firewall settings
+   - Verify network interface supports multicast
+
+3. If media isn't displaying:
+   - Check HTTP CDN logs
+   - Verify file permissions in the alerts directory
+   - Check Android emulator logs
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 

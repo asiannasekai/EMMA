@@ -1,29 +1,53 @@
 version: '3.8'
+
 services:
   cap-generator:
-    build: ./cap-generator
+    build:
+      context: ./cap-generator
+      dockerfile: Dockerfile
     volumes:
       - ./cap-generator:/app
-    working_dir: /app
-    command: python3 capgen.py
-    depends_on: []
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - emma-net
+
   ns3-sim:
-    build: ./ns3-sim
-    volumes:
-      - ./cap-generator:/data
-    working_dir: /data
-    command: /bin/bash -c "cp alert123.xml /ns3/scratch/ && cd /ns3 && ./waf --run 'scratch/emma-lte-sim --capFile=scratch/alert123.xml'"
-    network_mode: "host"
-    depends_on: [cap-generator]
+    build:
+      context: ./ns3-sim
+      dockerfile: Dockerfile
+    privileged: true  # Required for network simulation
+    networks:
+      - emma-net
+    depends_on:
+      - cap-generator
+
   http-cdn:
-    build: ./http-cdn
-    volumes:
-      - ./cap-generator/alert123.smc.zip:/usr/src/app/alerts/alert123.zip
-    working_dir: /usr/src/app
+    build:
+      context: ./http-cdn
+      dockerfile: Dockerfile
     ports:
-      - "8080:8080"
-    depends_on: [cap-generator]
+      - "3000:3000"
+    volumes:
+      - ./http-cdn/alerts:/app/alerts
+    networks:
+      - emma-net
+    depends_on:
+      - cap-generator
+
   ue-emulator:
-    build: ./ue-emulator
-    network_mode: "host"
-    depends_on: [ns3-sim, http-cdn] 
+    build:
+      context: ./ue-emulator
+      dockerfile: Dockerfile
+    privileged: true  # Required for Android emulator
+    network_mode: host  # Required for multicast
+    depends_on:
+      - ns3-sim
+      - http-cdn
+
+networks:
+  emma-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 
