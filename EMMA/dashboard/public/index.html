@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMMA - Emergency Alert System Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo i {
+            font-size: 2rem;
+            color: #ff6b6b;
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .status-healthy { background: #4CAF50; }
+        .status-degraded { background: #FF9800; }
+        .status-unhealthy { background: #F44336; }
+        .status-unknown { background: #9E9E9E; }
+        
+        .main-content {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header i {
+            font-size: 1.5rem;
+            color: #64B5F6;
+        }
+        
+        .card-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #64B5F6;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #B0BEC5;
+            margin-top: 0.5rem;
+        }
+        
+        .alert-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+        
+        .alert-extreme { border-left-color: #F44336; }
+        .alert-severe { border-left-color: #FF9800; }
+        .alert-moderate { border-left-color: #FFC107; }
+        .alert-minor { border-left-color: #4CAF50; }
+        
+        .alert-details {
+            flex: 1;
+        }
+        
+        .alert-headline {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .alert-meta {
+            font-size: 0.8rem;
+            color: #B0BEC5;
+        }
+        
+        .alert-severity {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .severity-extreme { background: #F44336; }
+        .severity-severe { background: #FF9800; }
+        .severity-moderate { background: #FFC107; color: #000; }
+        .severity-minor { background: #4CAF50; }
+        
+        .ue-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .ue-item {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+        
+        .ue-connected { border-left-color: #4CAF50; }
+        .ue-disconnected { border-left-color: #F44336; }
+        
+        .ue-id {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .ue-location {
+            font-size: 0.9rem;
+            color: #B0BEC5;
+        }
+        
+        .component-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+        
+        .component-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .component-name {
+            font-weight: 500;
+        }
+        
+        .component-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #B0BEC5;
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        .last-updated {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #B0BEC5;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-broadcast-tower"></i>
+            <h1>EMMA Dashboard</h1>
+        </div>
+        <div class="system-status">
+            <div class="status-indicator">
+                <div class="status-dot status-unknown" id="system-status-dot"></div>
+                <span id="system-status-text">Initializing...</span>
+            </div>
+            <div class="status-indicator">
+                <i class="fas fa-clock"></i>
+                <span id="last-update">Never</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <!-- System Metrics -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-line"></i>
+                <h3>System Metrics</h3>
+            </div>
+            <div class="metrics-grid" id="metrics-grid">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading metrics...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Alerts -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Recent Alerts</h3>
+            </div>
+            <div class="alert-list" id="alert-list">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading alerts...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Connected UEs -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-mobile-alt"></i>
+                <h3>Connected User Equipment</h3>
+            </div>
+            <div class="ue-grid" id="ue-grid">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading UEs...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Component Status -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-cogs"></i>
+                <h3>Component Status</h3>
+            </div>
+            <div class="component-list" id="component-list">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading components...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        class EmmaDashboard {
+            constructor() {
+                this.socket = null;
+                this.charts = {};
+                this.init();
+            }
+            
+            init() {
+                this.connectSocket();
+                this.setupEventListeners();
+            }
+            
+            connectSocket() {
+                this.socket = io();
+                
+                this.socket.on('connect', () => {
+                    console.log('Connected to dashboard server');
+                    this.updateConnectionStatus(true);
+                });
+                
+                this.socket.on('disconnect', () => {
+                    console.log('Disconnected from dashboard server');
+                    this.updateConnectionStatus(false);
+                });
+                
+                this.socket.on('initial-data', (data) => {
+                    this.updateMetrics(data.metrics);
+                    this.updateAlerts(data.alerts);
+                    this.updateUEs(data.ues);
+                    this.updateSystemStatus(data.systemStatus);
+                });
+                
+                this.socket.on('metrics-update', (metrics) => {
+                    this.updateMetrics(metrics);
+                });
+                
+                this.socket.on('alert-update', (data) => {
+                    this.handleAlertUpdate(data);
+                });
+                
+                this.socket.on('ue-update', (data) => {
+                    this.handleUEUpdate(data);
+                });
+            }
+            
+            setupEventListeners() {
+                // Auto-refresh every 30 seconds
+                setInterval(() => {
+                    if (this.socket && this.socket.connected) {
+                        this.socket.emit('request-update');
+                    }
+                }, 30000);
+            }
+            
+            updateConnectionStatus(connected) {
+                const statusDot = document.getElementById('system-status-dot');
+                const statusText = document.getElementById('system-status-text');
+                
+                if (connected) {
+                    statusDot.className = 'status-dot status-healthy';
+                    statusText.textContent = 'Connected';
+                } else {
+                    statusDot.className = 'status-dot status-unhealthy';
+                    statusText.textContent = 'Disconnected';
+                }
+            }
+            
+            updateMetrics(metrics) {
+                const grid = document.getElementById('metrics-grid');
+                
+                grid.innerHTML = `
+                    <div class="metric">
+                        <div class="metric-value">${metrics.totalAlerts || 0}</div>
+                        <div class="metric-label">Total Alerts</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${metrics.activeUEs || 0}</div>
+                        <div class="metric-label">Active UEs</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${metrics.alertsInLast24h || 0}</div>
+                        <div class="metric-label">Alerts (24h)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${(metrics.averageDeliveryTime || 0).toFixed(2)}s</div>
+                        <div class="metric-label">Avg Delivery</div>
+                    </div>
+                `;
+                
+                this.updateLastUpdated(metrics.lastUpdated);
+            }
+            
+            updateAlerts(alerts) {
+                const list = document.getElementById('alert-list');
+                
+                if (!alerts || alerts.length === 0) {
+                    list.innerHTML = '<div class="loading">No recent alerts</div>';
+                    return;
+                }
+                
+                list.innerHTML = alerts.map(alert => `
+                    <div class="alert-item alert-${alert.severity.toLowerCase()}">
+                        <div class="alert-details">
+                            <div class="alert-headline">${alert.headline}</div>
+                            <div class="alert-meta">
+                                ${alert.category} • ${new Date(alert.sent).toLocaleString()}
+                            </div>
+                        </div>
+                        <div class="alert-severity severity-${alert.severity.toLowerCase()}">
+                            ${alert.severity}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            updateUEs(ues) {
+                const grid = document.getElementById('ue-grid');
+                
+                if (!ues || ues.length === 0) {
+                    grid.innerHTML = '<div class="loading">No connected UEs</div>';
+                    return;
+                }
+                
+                grid.innerHTML = ues.map(ue => `
+                    <div class="ue-item ue-${ue.status}">
+                        <div class="ue-id">${ue.id}</div>
+                        <div class="ue-location">
+                            ${ue.location ? 
+                                `📍 ${ue.location.lat.toFixed(4)}, ${ue.location.lon.toFixed(4)}` : 
+                                '📍 Unknown location'
+                            }
+                        </div>
+                        <div class="ue-location">
+                            Alerts: ${ue.alertsReceived || 0} • 
+                            ${ue.status === 'connected' ? 'Online' : 'Offline'}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            updateSystemStatus(status) {
+                const list = document.getElementById('component-list');
+                
+                if (!status || !status.components) {
+                    list.innerHTML = '<div class="loading">Loading component status...</div>';
+                    return;
+                }
+                
+                list.innerHTML = Object.entries(status.components).map(([name, componentStatus]) => `
+                    <div class="component-item">
+                        <div class="component-name">${name}</div>
+                        <div class="component-status severity-${this.getStatusClass(componentStatus)}">
+                            ${componentStatus}
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Update overall system status
+                const statusDot = document.getElementById('system-status-dot');
+                const statusText = document.getElementById('system-status-text');
+                
+                statusDot.className = `status-dot status-${status.overallStatus}`;
+                statusText.textContent = status.overallStatus.charAt(0).toUpperCase() + status.overallStatus.slice(1);
+            }
+            
+            getStatusClass(status) {
+                switch (status) {
+                    case 'healthy': return 'minor';
+                    case 'degraded': return 'moderate';
+                    case 'unhealthy': return 'extreme';
+                    default: return 'severe';
+                }
+            }
+            
+            handleAlertUpdate(data) {
+                if (data.type === 'new-alert') {
+                    // Show notification or update UI
+                    console.log('New alert received:', data.alert);
+                    
+                    // Refresh the alerts list
+                    this.socket.emit('request-update');
+                }
+            }
+            
+            handleUEUpdate(data) {
+                console.log('UE status update:', data);
+                
+                // Refresh the UE list
+                this.socket.emit('request-update');
+            }
+            
+            updateLastUpdated(timestamp) {
+                const element = document.getElementById('last-update');
+                if (timestamp) {
+                    element.textContent = new Date(timestamp).toLocaleTimeString();
+                }
+            }
+        }
+        
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new EmmaDashboard();
+        });
+    </script>
+</body>
+</html>

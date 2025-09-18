@@ -5,10 +5,21 @@
     android:background="#000000">
 
     <TextView
-        android:id="@+id/alert_text"
+        android:id="@+id/connection_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
+        android:padding="8dp"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:text="Status: Disconnected"
+        android:background="#333333" />
+
+    <TextView
+        android:id="@+id/alert_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/connection_status"
         android:padding="16dp"
         android:textColor="#FFFFFF"
         android:textSize="18sp"

@@ -1,32 +1,61 @@
-# EMMA (Enhanced Multimedia Mobile Alerts)
+# EMMA - Emergency Mobile Alert System
 
-A fully software-defined proof-of-concept for emergency alert distribution over LTE networks with multimedia support.
+A comprehensive emergency alert system designed for cellular networks using LTE technology. EMMA provides real-time alert distribution, network simulation, and mobile device emulation capabilities.
 
-## Project Structure
+## 🚀 Quick Start
+
+```bash
+# Clone and navigate to the project
+cd /workspaces/EMMA/EMMA
+
+# Make scripts executable
+chmod +x scripts/*.sh
+
+# Start the complete EMMA system
+./scripts/start-emma.sh
+
+# Check system status
+./scripts/emma-status.sh
+
+# Access the monitoring dashboard
+open http://localhost:3002
+```
+
+## 📋 System Overview
+
+EMMA consists of several integrated components:
+
+- **📡 Alert Distributor** - WebSocket-based real-time alert distribution hub
+- **🏗️ CAP Generator** - Common Alerting Protocol message generator
+- **📱 UE Emulator** - Android-based user equipment emulator with WebSocket integration
+- **📁 HTTP CDN** - Content delivery network for alert resources
+- **🌐 NS-3 Simulator** - LTE network simulation environment
+- **📊 Dashboard** - Real-time monitoring and management interface
+- **🔴 Redis** - Message queue and data storage backend
+
+## 🏗️ Architecture
 
 ```
-EMMA/
-├── cap-generator/     # Python-based CAP/eCAP generator
-├── ns3-sim/          # ns-3 LTE network simulator
-├── http-cdn/         # Node.js media server
-├── ue-emulator/      # Android client emulator
-└── docker-compose.yml
+┌─────────────────────────────────────────────────────────────┐
+│                      EMMA System                            │
+├─────────────────────────────────────────────────────────────┤
+│  Dashboard (3002)     Alert Distributor (3001/8080)        │
+│       │                        │                           │
+│       └────────────────────────┼──────────────────┐        │
+│                                │                  │        │
+│  HTTP CDN (3000)               │              UE Emulator  │
+│       │                        │                  │        │
+│       └────────────────────────┼──────────────────┤        │
+│                                │                  │        │
+│  CAP Generator    ←──────────── Redis ←──────────┘         │
+│       │                      (6379)                        │
+│       └─────────────────────────┬─────────────────┐        │
+│                                 │                 │        │
+│            NS-3 Simulator ←─────┘                 │        │
+│                                                   │        │
+│            Integration Tests ←────────────────────┘        │
+└─────────────────────────────────────────────────────────────┘
 ```
-
-## Prerequisites
-
-- Docker and Docker Compose
-- Ubuntu 20.04 or later
-- At least 8GB RAM
-- 20GB free disk space
-
-## Quick Start
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/EMMA.git
-   cd EMMA
-   ```
 
 2. Build and start all services:
    ```bash
