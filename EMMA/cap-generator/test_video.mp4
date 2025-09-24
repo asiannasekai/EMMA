@@ -1,0 +1,16 @@
+# EMMA Emergency Alert Video Placeholder
+# 
+# This file represents a multimedia emergency alert video
+# that would contain:
+# - Spoken alert message
+# - Visual weather radar/map
+# - Safety instructions
+# - Evacuation routes
+# - Emergency contact information
+#
+# In production, this would be an actual MP4 video file
+# generated from alert templates and real-time data.
+#
+# File: test_video.mp4
+# Duration: ~30 seconds
+# Content: Emergency weather alert with visual aids

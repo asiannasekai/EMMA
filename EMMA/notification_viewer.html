@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 EMMA Emergency Alert Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .alert-notification {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 8px solid #c0392b;
+            box-shadow: 0 10px 25px rgba(238, 90, 36, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .alert-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .alert-icon {
+            font-size: 32px;
+            margin-right: 15px;
+        }
+        
+        .alert-details {
+            margin: 15px 0;
+        }
+        
+        .alert-media {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .alert-image {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #27ae60;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        
+        .connection-status {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 EMMA Emergency Alert System</h1>
+            <p>Real-time Emergency Alert Notifications</p>
+        </div>
+        
+        <div class="connection-status" id="connectionStatus">
+            <strong>📡 Connection Status:</strong> <span id="statusText">Connecting...</span>
+            <div class="status-indicator" id="statusIndicator">CONNECTING</div>
+        </div>
+        
+        <div id="alertContainer">
+            <!-- Sample Alert for Demo -->
+            <div class="alert-notification">
+                <div class="alert-header">
+                    <span class="alert-icon">🌪️</span>
+                    <span>TORNADO WARNING - Take Shelter Immediately</span>
+                </div>
+                
+                <div class="alert-details">
+                    <p><strong>📍 Area:</strong> Downtown Emergency Zone</p>
+                    <p><strong>⏰ Sent:</strong> January 24, 2025 at 5:26 AM</p>
+                    <p><strong>🚨 Severity:</strong> EXTREME</p>
+                    <p><strong>⚡ Urgency:</strong> IMMEDIATE</p>
+                </div>
+                
+                <div class="alert-details">
+                    <p><strong>📢 Alert:</strong> A confirmed tornado has been spotted in your area. Seek shelter in a sturdy building immediately. Avoid windows and go to the lowest floor.</p>
+                    <p><strong>🛡️ Instructions:</strong> Move to an interior room on the lowest floor away from windows. Protect your head and neck with arms or blankets.</p>
+                </div>
+                
+                <div class="alert-media">
+                    <p><strong>📸 Emergency Alert Image:</strong></p>
+                    <img src="http://localhost:3000/alerts/test_image.jpg" alt="Emergency Alert" class="alert-image" id="alertImage">
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-danger" onclick="acknowledgeAlert()">✅ ALERT ACKNOWLEDGED</button>
+                    <button class="btn" onclick="viewDetails()">📋 VIEW DETAILS</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn" onclick="connectWebSocket()">🔄 Reconnect to EMMA</button>
+            <button class="btn" onclick="testAlert()">📢 Send Test Alert</button>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        
+        function updateConnectionStatus(status, text) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.textContent = status;
+            statusText.textContent = text;
+            
+            if (status === 'CONNECTED') {
+                indicator.style.background = '#27ae60';
+            } else if (status === 'CONNECTING') {
+                indicator.style.background = '#f39c12';
+            } else {
+                indicator.style.background = '#e74c3c';
+            }
+        }
+        
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket('ws://localhost:8080');
+                
+                ws.onopen = function(event) {
+                    updateConnectionStatus('CONNECTED', 'Connected to EMMA Alert Distributor');
+                    
+                    // Register as UE
+                    ws.send(JSON.stringify({
+                        type: 'register',
+                        ueId: 'WEB-VIEWER-001',
+                        timestamp: new Date().toISOString()
+                    }));
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    console.log('Received:', data);
+                    
+                    if (data.type === 'alert') {
+                        showAlert(data.alert);
+                    }
+                };
+                
+                ws.onclose = function(event) {
+                    updateConnectionStatus('DISCONNECTED', 'Connection lost');
+                };
+                
+                ws.onerror = function(error) {
+                    updateConnectionStatus('ERROR', 'Connection error');
+                    console.error('WebSocket error:', error);
+                };
+                
+            } catch (error) {
+                updateConnectionStatus('ERROR', 'Failed to connect');
+                console.error('Connection error:', error);
+            }
+        }
+        
+        function showAlert(alert) {
+            const container = document.getElementById('alertContainer');
+            const alertHtml = `
+                <div class="alert-notification" style="animation: pulse 2s infinite;">
+                    <div class="alert-header">
+                        <span class="alert-icon">🚨</span>
+                        <span>${alert.info?.headline || alert.info?.event}</span>
+                    </div>
+                    
+                    <div class="alert-details">
+                        <p><strong>📍 Area:</strong> ${alert.info?.area?.areaDesc || 'Unknown'}</p>
+                        <p><strong>⏰ Received:</strong> ${new Date().toLocaleString()}</p>
+                        <p><strong>🚨 Severity:</strong> ${alert.info?.severity || 'Unknown'}</p>
+                        <p><strong>⚡ Urgency:</strong> ${alert.info?.urgency || 'Unknown'}</p>
+                    </div>
+                    
+                    <div class="alert-details">
+                        <p><strong>📢 Description:</strong> ${alert.info?.description || 'No description'}</p>
+                        <p><strong>🛡️ Instructions:</strong> ${alert.info?.instruction || 'No instructions'}</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="btn btn-danger" onclick="acknowledgeAlert()">✅ ALERT ACKNOWLEDGED</button>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = alertHtml + container.innerHTML;
+        }
+        
+        function acknowledgeAlert() {
+            alert('🆔 Alert acknowledged! Emergency services have been notified of your status.');
+        }
+        
+        function viewDetails() {
+            window.open('http://localhost:3002', '_blank');
+        }
+        
+        function testAlert() {
+            fetch('http://localhost:3001/distribute-alert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    alert: {
+                        identifier: 'WEB-TEST-' + Date.now(),
+                        sender: 'Web Viewer',
+                        sent: new Date().toISOString(),
+                        status: 'Test',
+                        msgType: 'Alert',
+                        scope: 'Public',
+                        info: {
+                            category: 'Safety',
+                            event: 'TEST NOTIFICATION',
+                            urgency: 'Expected',
+                            severity: 'Minor',
+                            certainty: 'Likely',
+                            headline: '📱 Test Emergency Notification',
+                            description: 'This is a test notification sent from the web viewer.',
+                            instruction: 'No action required. This is only a test.',
+                            area: {
+                                areaDesc: 'Web Test Zone',
+                                geocode: '0.0000,0.0000'
+                            }
+                        }
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Test alert sent:', data);
+                alert('✅ Test alert sent successfully!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Failed to send test alert');
+            });
+        }
+        
+        // Auto-connect on page load
+        window.onload = function() {
+            connectWebSocket();
+            
+            // Check if alert image loads
+            const alertImage = document.getElementById('alertImage');
+            if (alertImage) {
+                alertImage.onerror = function() {
+                    this.style.display = 'none';
+                    this.parentElement.innerHTML += '<p style="color: #ffeb3b;">⚠️ Alert image not available</p>';
+                };
+            }
+        };
+    </script>
+</body>
+</html>

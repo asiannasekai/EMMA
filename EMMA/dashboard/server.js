@@ -140,14 +140,12 @@ class EmmaDashboard {
             
             // Main Redis client
             this.redisClient = redis.createClient({
-                host: redisHost,
-                port: redisPort
+                url: `redis://${redisHost}:${redisPort}`
             });
             
             // Subscriber client
             this.subscriber = redis.createClient({
-                host: redisHost,
-                port: redisPort
+                url: `redis://${redisHost}:${redisPort}`
             });
             
             await this.redisClient.connect();

@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Redis for message queuing and data sharing
   redis:
@@ -59,34 +61,34 @@ services:
           cpus: '0.1'
           memory: 128M
 
-  # NS-3 Network Simulator (disabled due to build complexity)
-  # ns3-sim:
-  #   build:
-  #     context: ./ns3-sim
-  #     dockerfile: Dockerfile
-  #   container_name: emma-ns3-simulator
-  #   privileged: true
-  #   volumes:
-  #     - shared-alerts:/app/input
-  #     - ./ns3-sim:/app/src
-  #   environment:
-  #     - REDIS_HOST=redis
-  #     - REDIS_PORT=6379
-  #   networks:
-  #     - emma-net
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #     cap-generator:
-  #       condition: service_healthy
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '1.0'
-  #         memory: 512M
-  #       reservations:
-  #         cpus: '0.2'
-  #         memory: 256M
+  # NS-3 Network Simulator
+  ns3-sim:
+    build:
+      context: ./ns3-sim
+      dockerfile: Dockerfile
+    container_name: emma-ns3-simulator
+    privileged: true
+    volumes:
+      - shared-alerts:/app/input
+      - ./ns3-sim:/app/src
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - emma-net
+    depends_on:
+      redis:
+        condition: service_healthy
+      cap-generator:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
 
   # HTTP CDN Server
   http-cdn:

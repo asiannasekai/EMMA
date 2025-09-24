@@ -97,16 +97,12 @@ class AlertDistributor {
             
             // Main Redis client
             this.redisClient = redis.createClient({
-                host: redisHost,
-                port: redisPort,
-                retryDelayOnFailover: 100,
-                maxRetriesPerRequest: 3
+                url: `redis://${redisHost}:${redisPort}`
             });
             
             // Subscriber client
             this.subscriber = redis.createClient({
-                host: redisHost,
-                port: redisPort
+                url: `redis://${redisHost}:${redisPort}`
             });
             
             await this.redisClient.connect();
